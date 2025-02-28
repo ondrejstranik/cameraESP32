@@ -19,9 +19,9 @@
   <button id="disconnectBleButton">Disconnect BLE Device</button>
   <p>BLE state: <strong><span id="bleState" style="color:#d13a30;">Disconnected</span></strong></p>
   <h2>Fetched Value</h2>
-  <p><span id="valueContainer">NaN</span></p>
+  <p><span id="valueContainer">na</span></p>
   <p>Last reading: <span id="timestamp"></span></p>
-  <button id="cameraButtonID">Camera</button>
+  <p> link to <a id="cameraID" href="#" target="_blank" rel="noopener noreferrer">camera</a>.</p>
   <h2>Control GPIO 2</h2>
   <button id="onButton">ON</button>
   <button id="offButton">OFF</button>
@@ -39,7 +39,7 @@
     const latestValueSent = document.getElementById('valueSent');
     const bleStateContainer = document.getElementById('bleState');
     const timestampContainer = document.getElementById('timestamp');
-    const cameraButton = document.getElementById('cameraButtonID');
+    const cameraLink = document.getElementById('cameraID');
 
     //Define BLE Device Specs
     var deviceName ='ESP32';
@@ -75,6 +75,7 @@
         if (!navigator.bluetooth) {
             console.log("Web Bluetooth API is not available in this browser!");
             bleStateContainer.innerHTML = "Web Bluetooth API is not available in this browser!";
+            cameraLink.href = "https://www.leibniz-ipht.de/"
             return false
         }
         console.log('Web Bluetooth API supported in this browser.');
@@ -137,9 +138,12 @@
         console.log("Characteristic value changed: ", newValueReceived);
         retrievedValue.innerHTML = newValueReceived;
         timestampContainer.innerHTML = getDateTime();
+        cameraLink.href = newValueReceived
     }
 
     function writeOnCharacteristic(value){
+        
+        
         if (bleServer && bleServer.connected) {
             bleServiceFound.getCharacteristic(ledCharacteristic)
             .then(characteristic => {
@@ -201,9 +205,6 @@
         return datetime;
     }
 
-    function openInNewTab(url) {
-        window.open(url, '_blank').focus();
-    }
 
 
 
