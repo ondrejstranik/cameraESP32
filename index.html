@@ -138,7 +138,7 @@
         console.log("Characteristic value changed: ", newValueReceived);
         retrievedValue.innerHTML = newValueReceived;
         timestampContainer.innerHTML = getDateTime();
-        cameraLink.href = "http://"+ newValueReceived
+        cameraLink.href = "http://"+ newValueReceived + ":81"
     }
 
     function writeOnCharacteristic(value){
