@@ -15,10 +15,18 @@
 </head>
 <body>
   <h1>ESP32 Web BLE Application</h1>
+  <label for="name">Camera Name:</label>
+  <input type="text" id="cameraNameID" name="name" />
   <button id="connectBleButton">Connect to BLE Device</button>
   <button id="disconnectBleButton">Disconnect BLE Device</button>
   <p>BLE state: <strong><span id="bleState" style="color:#d13a30;">Disconnected</span></strong></p>
-  <h2>Fetched Value</h2>
+  <h2>Wi-fi connection</h2>
+  <label for="name">Wi-fi Name:</label>
+  <input type="text" id="wifiNameID" name="name" />
+  <label for="name">Wi-fi password:</label>
+  <input type="password" id="wifiPwdID" name="name" />
+  <button id="wifiConnectID">Connect wifi</button>
+
   <p><span id="valueContainer">na</span></p>
   <p>Last reading: <span id="timestamp"></span></p>
   <p> link to <a id="cameraID" href="#" target="_blank" rel="noopener noreferrer">camera</a>.</p>
@@ -40,17 +48,28 @@
     const bleStateContainer = document.getElementById('bleState');
     const timestampContainer = document.getElementById('timestamp');
     const cameraLink = document.getElementById('cameraID');
+    const cameraName = document.getElementById('cameraNameID');
+    const wifiName = document.getElementById('wifiNameID');
+    const wifiPwd = document.getElementById('wifiPwdID');
+    const wifiConnectButton = document.getElementById('wifiConnectID');
 
     //Define BLE Device Specs
     var deviceName ='ESP32';
     var bleService = '19b10000-e8f2-537e-4f6c-d104768a1214';
     var ledCharacteristic = '19b10002-e8f2-537e-4f6c-d104768a1214';
     var sensorCharacteristic= '19b10001-e8f2-537e-4f6c-d104768a1214';
+    var wifiNameCharacteristic= '19b10003-e8f2-537e-4f6c-d104768a1214';
+    var wifiPwdCharacteristic= '19b10004-e8f2-537e-4f6c-d104768a1214';
+
+
 
     //Global Variables to Handle Bluetooth
     var bleServer;
     var bleServiceFound;
     var sensorCharacteristicFound;
+
+    //FIll up the values
+    cameraName.value = deviceName
 
     // Connect Button (search for BLE Devices only if BLE is available)
     connectButton.addEventListener('click', (event) => {
@@ -64,6 +83,10 @@
 
     // Camera Button
     cameraButton.addEventListener('click', () => openInNewTab(retrievedValue.innerHTML))
+
+    //Wifi Button
+
+    wifiConnectButton.addEventListener('click', () => sendWifiData)
 
 
     // Write to the ESP32 LED Characteristic
@@ -84,6 +107,8 @@
 
     // Connect to BLE Device and Enable Notifications
     function connectToDevice(){
+        deviceName = cameraName.value
+        
         console.log('Initializing Bluetooth...');
         navigator.bluetooth.requestDevice({
             filters: [{name: deviceName}],
@@ -158,6 +183,40 @@
             .catch(error => {
                 console.error("Error writing to the LED characteristic: ", error);
             });
+        } else {
+            console.error ("Bluetooth is not connected. Cannot write to characteristic.")
+            window.alert("Bluetooth is not connected. Cannot write to characteristic. \n Connect to BLE first!")
+        }
+    }
+
+    function sendWifiData(name,pwd,value){
+        if (bleServer && bleServer.connected) {
+            bleServiceFound.getCharacteristic(wifiNameCharacteristic)
+            .then(characteristic => {
+                console.log("Found the wifiName characteristic: ", characteristic.uuid);
+                return characteristic.writeValue(name);
+            })
+            .then(() => {
+                console.log("Value written to wifiName characteristic:", name);
+            })
+            .catch(error => {
+                console.error("Error writing to the wifiName characteristic: ", error);
+            });
+            bleServiceFound.getCharacteristic(wifiPwdCharacteristic)
+            .then(characteristic => {
+                console.log("Found the wifiPwd characteristic: ", characteristic.uuid);
+                return characteristic.writeValue(pwd);
+            })
+            .then(() => {
+                console.log("Value written to wifiPwd characteristic:", pwd);
+            })
+            .catch(error => {
+                console.error("Error writing to the wifiPwd characteristic: ", error);
+            });
+            // short cut. using the LED characteristic
+            writeOnCharacteristic(1)
+            window.alert("Connecting esp32 to wifi")
+
         } else {
             console.error ("Bluetooth is not connected. Cannot write to characteristic.")
             window.alert("Bluetooth is not connected. Cannot write to characteristic. \n Connect to BLE first!")
