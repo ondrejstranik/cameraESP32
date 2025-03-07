@@ -30,7 +30,7 @@
   <p><span id="valueContainer">na</span></p>
   <p>Last reading: <span id="timestamp"></span></p>
   <p> link to <a id="cameraID" href="#" target="_blank" rel="noopener noreferrer">camera</a>.</p>
-  <h2>Camera Control</h2>
+  <h2>Camera Control new</h2>
   <button id="onButton">ON</button>
   <button id="offButton">OFF</button>
   <p>Last value sent: <span id="valueSent"></span></p>
@@ -207,7 +207,7 @@
                 console.error("Error writing to the wifiName characteristic: ", error);
             });
             
-            delay(250).then(() => {           
+            delay(1000).then(() => {           
                 bleServiceFound.getCharacteristic(wifiPwdCharacteristic)
                 .then(characteristic => {
                     console.log("Found the wifiPwd characteristic: ", characteristic.uuid);
@@ -222,7 +222,7 @@
                 });
             });
 
-            delay(500).then(() => { 
+            delay(2000).then(() => { 
                 bleServiceFound.getCharacteristic(ledCharacteristic)
                 .then(characteristic => {
                     console.log("Found the LED characteristic: ", characteristic.uuid);
@@ -237,7 +237,7 @@
                 });
             });
 
-            window.alert("Connecting esp32 to wifi")
+            //window.alert("Connecting esp32 to wifi")
 
         } else {
             console.error ("Bluetooth is not connected. Cannot write to characteristic.")
