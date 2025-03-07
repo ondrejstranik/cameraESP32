@@ -87,6 +87,11 @@
     onButton.addEventListener('click', () => writeOnCharacteristic(1));
     offButton.addEventListener('click', () => writeOnCharacteristic(0));
 
+    // delay function - to wait between setting BLE characteristic
+    function delay(time) {
+    return new Promise(resolve => setTimeout(resolve, time));
+}
+
     // Check if BLE is available in your Browser
     function isWebBluetoothEnabled() {
         if (!navigator.bluetooth) {
@@ -196,33 +201,40 @@
             })
             .then(() => {
                 console.log("Value written to wifiName characteristic:", name);
+                
             })
             .catch(error => {
                 console.error("Error writing to the wifiName characteristic: ", error);
             });
-            bleServiceFound.getCharacteristic(wifiPwdCharacteristic)
-            .then(characteristic => {
-                console.log("Found the wifiPwd characteristic: ", characteristic.uuid);
-                const _pwd = new TextEncoder().encode(pwd);
-                return characteristic.writeValue(_pwd);
-            })
-            .then(() => {
-                console.log("Value written to wifiPwd characteristic:", pwd);
-            })
-            .catch(error => {
-                console.error("Error writing to the wifiPwd characteristic: ", error);
+            
+            delay(250).then(() => {           
+                bleServiceFound.getCharacteristic(wifiPwdCharacteristic)
+                .then(characteristic => {
+                    console.log("Found the wifiPwd characteristic: ", characteristic.uuid);
+                    const _pwd = new TextEncoder().encode(pwd);
+                    return characteristic.writeValue(_pwd);
+                })
+                .then(() => {
+                    console.log("Value written to wifiPwd characteristic:", pwd);
+                })
+                .catch(error => {
+                    console.error("Error writing to the wifiPwd characteristic: ", error);
+                });
             });
-            bleServiceFound.getCharacteristic(ledCharacteristic)
-            .then(characteristic => {
-                console.log("Found the LED characteristic: ", characteristic.uuid);
-                const _status = new TextEncoder().encode(status);
-                return characteristic.writeValue(_status);
-            })
-            .then(() => {
-                console.log("Value written to LEDcharacteristic:", status);
-            })
-            .catch(error => {
-                console.error("Error writing to the LED characteristic: ", error);
+
+            delay(500).then(() => { 
+                bleServiceFound.getCharacteristic(ledCharacteristic)
+                .then(characteristic => {
+                    console.log("Found the LED characteristic: ", characteristic.uuid);
+                    const _status = new TextEncoder().encode(status);
+                    return characteristic.writeValue(_status);
+                })
+                .then(() => {
+                    console.log("Value written to LEDcharacteristic:", status);
+                })
+                .catch(error => {
+                    console.error("Error writing to the LED characteristic: ", error);
+                });
             });
 
             window.alert("Connecting esp32 to wifi")
