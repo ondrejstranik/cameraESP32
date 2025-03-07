@@ -81,12 +81,8 @@
     // Disconnect Button
     disconnectButton.addEventListener('click', disconnectDevice);
 
-    // Camera Button
-    cameraButton.addEventListener('click', () => openInNewTab(retrievedValue.innerHTML))
-
     //Wifi Button
-
-    wifiConnectButton.addEventListener('click', () => sendWifiData)
+    wifiConnectButton.addEventListener('click', () => sendWifiData(wifiName.value, wifiPwd.value))
 
 
     // Write to the ESP32 LED Characteristic
@@ -189,12 +185,16 @@
         }
     }
 
-    function sendWifiData(name,pwd,value){
+    function sendWifiData(name,pwd){
+        let status= "connecting";
+
+        
         if (bleServer && bleServer.connected) {
             bleServiceFound.getCharacteristic(wifiNameCharacteristic)
             .then(characteristic => {
                 console.log("Found the wifiName characteristic: ", characteristic.uuid);
-                return characteristic.writeValue(name);
+                const _name = new TextEncoder().encode(name);
+                return characteristic.writeValue(_name);
             })
             .then(() => {
                 console.log("Value written to wifiName characteristic:", name);
@@ -205,7 +205,8 @@
             bleServiceFound.getCharacteristic(wifiPwdCharacteristic)
             .then(characteristic => {
                 console.log("Found the wifiPwd characteristic: ", characteristic.uuid);
-                return characteristic.writeValue(pwd);
+                const _pwd = new TextEncoder().encode(pwd);
+                return characteristic.writeValue(_pwd);
             })
             .then(() => {
                 console.log("Value written to wifiPwd characteristic:", pwd);
@@ -213,8 +214,19 @@
             .catch(error => {
                 console.error("Error writing to the wifiPwd characteristic: ", error);
             });
-            // short cut. using the LED characteristic
-            writeOnCharacteristic(1)
+            bleServiceFound.getCharacteristic(ledCharacteristic)
+            .then(characteristic => {
+                console.log("Found the LED characteristic: ", characteristic.uuid);
+                const _status = new TextEncoder().encode(status);
+                return characteristic.writeValue(_status);
+            })
+            .then(() => {
+                console.log("Value written to LEDcharacteristic:", status);
+            })
+            .catch(error => {
+                console.error("Error writing to the LED characteristic: ", error);
+            });
+
             window.alert("Connecting esp32 to wifi")
 
         } else {
