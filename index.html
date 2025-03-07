@@ -58,6 +58,7 @@
     var sensorCharacteristic= '19b10001-e8f2-537e-4f6c-d104768a1214';
     var wifiNameCharacteristic= '19b10003-e8f2-537e-4f6c-d104768a1214';
     var wifiPwdCharacteristic= '19b10004-e8f2-537e-4f6c-d104768a1214';
+    var SECharacteristic = '19b10005-e8f2-537e-4f6c-d104768a1214';
 
 
 
@@ -84,8 +85,8 @@
 
 
     // Write to the ESP32 LED Characteristic
-    onButton.addEventListener('click', () => writeOnCharacteristic(1));
-    offButton.addEventListener('click', () => writeOnCharacteristic(0));
+    onButton.addEventListener('click', () => writeOnCharacteristic("1"));
+    offButton.addEventListener('click', () => writeOnCharacteristic("0"));
 
     // delay function - to wait between setting BLE characteristic
     function delay(time) {
@@ -165,19 +166,19 @@
         cameraLink.href = "http://"+ newValueReceived + ":81"
     }
 
-    function writeOnCharacteristic(value){
+    function writeOnCharacteristic(name){
         
         
         if (bleServer && bleServer.connected) {
-            bleServiceFound.getCharacteristic(ledCharacteristic)
+            bleServiceFound.getCharacteristic(SECharacteristic)
             .then(characteristic => {
                 console.log("Found the LED characteristic: ", characteristic.uuid);
-                const data = new Uint8Array([value]);
-                return characteristic.writeValue(data);
+                const _name = new TextEncoder().encode(name);
+                return characteristic.writeValue(_name);
             })
             .then(() => {
-                latestValueSent.innerHTML = value;
-                console.log("Value written to LEDcharacteristic:", value);
+                latestValueSent.innerHTML = name;
+                console.log("Value written to LEDcharacteristic:", name);
             })
             .catch(error => {
                 console.error("Error writing to the LED characteristic: ", error);
