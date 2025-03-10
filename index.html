@@ -69,6 +69,8 @@
 
     //FIll up the values
     cameraName.value = deviceName
+    wifiName.value = 'esp32';
+    wifiPwd.value = 'esp32esp32';
 
     // Connect Button (search for BLE Devices only if BLE is available)
     connectButton.addEventListener('click', (event) => {
@@ -163,7 +165,9 @@
         console.log("Characteristic value changed: ", newValueReceived);
         retrievedValue.innerHTML = newValueReceived;
         timestampContainer.innerHTML = getDateTime();
-        cameraLink.href = "http://"+ newValueReceived + ":81"
+        //cameraLink.href = "http://"+ newValueReceived + ":81"
+        cameraLink.href = "pages/_index.html?var1="+newValueReceived
+
     }
 
     function writeOnCharacteristic(name){
