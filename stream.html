@@ -1,3 +1,9 @@
+<!--
+  This is the webpage hosted on the esp32 webserver
+-->
+
+
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,34 +12,16 @@
     <link rel="icon" type="image/jpeg" href="">
 </head>
 <style>
-  #dogPic, #catPic {
-    width: 20px;
-    height: 20px;
-    position: absolute;
-    background: red;
-    top: 10px;
-    left: 10px;
-  }
-
-  #dogPic {
-    background: blue;
-    top: 50px;
-    left: 50px;
-  }
 </style>
 <body>
   <img id="cameraStreamID" src="site-logo.jpg" alt="" />
   <canvas id='myCanvas' width='50px' height='50px'></canvas>
-  <div id="dogPic"></div>
-  <div id="catPic"></div>
 </body>
 <script>
   // DOM Elements
   const img = document.getElementById('cameraStreamID');
   const cnvs = document.getElementById("myCanvas");
   const ctx = cnvs.getContext("2d");
-  var dog = document.getElementById("dogPic");
-  var cat = document.getElementById("catPic");
   var moving = false;
 
   function Draw(){
@@ -42,10 +30,20 @@
     cnvs.style.top = img.offsetTop + "px";
     
     var ctx = cnvs.getContext("2d");
-    ctx.beginPath();
-    ctx.arc(25, 25, 24, 0, 2 * Math.PI, false);
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#00ff00';
+    // circle
+    ctx.beginPath();
+    ctx.arc(25, 25, 24, 0, 2 * Math.PI, false);
+    ctx.stroke();
+    ctx.beginPath();
+    // hline
+    ctx.moveTo(25,0);
+    ctx.lineTo(25,50);
+    ctx.stroke();
+    // vline
+    ctx.moveTo(0,25);
+    ctx.lineTo(50,25);
     ctx.stroke();
   }
 
@@ -68,8 +66,6 @@
   }
 
   Draw()
-  dog.addEventListener("mousedown", initialClick, false);
-  cat.addEventListener("mousedown", initialClick, false);
   cnvs.addEventListener("mousedown", initialClick, false);
 
 </script>
