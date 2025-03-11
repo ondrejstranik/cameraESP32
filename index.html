@@ -29,7 +29,7 @@
 
   <p><span id="valueContainer">na</span></p>
   <p>Last reading: <span id="timestamp"></span></p>
-  <p> link to <a id="cameraID" href="#" target="_blank" rel="noopener noreferrer">camera</a>.</p>
+  <p> link to <a id="cameraID" href="stream.html" target="_blank" rel="noopener noreferrer">camera</a>.</p>
   <h2>Camera Control new</h2>
   <button id="onButton">ON</button>
   <button id="offButton">OFF</button>
@@ -166,7 +166,7 @@
         retrievedValue.innerHTML = newValueReceived;
         timestampContainer.innerHTML = getDateTime();
         //cameraLink.href = "http://"+ newValueReceived + ":81"
-        cameraLink.href = "pages/_index.html?var1="+newValueReceived
+        cameraLink.href = "stream.html?var1="+newValueReceived
 
     }
 
