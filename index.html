@@ -157,7 +157,7 @@
     function handleCharacteristicChange(event){
         const newValueReceived = new TextDecoder().decode(event.target.value);
         console.log("Characteristic value changed: ", newValueReceived);
-        retrievedValue.innerHTML = "ip: "+ decodedValue;
+        retrievedValue.innerHTML = "ip: "+ newValueReceived;
         timestampContainer.innerHTML = getDateTime();
         cameraLink.href = "http://"+ newValueReceived + ":80"
     }
