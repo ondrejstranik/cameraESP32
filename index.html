@@ -1,37 +1,87 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WiFi Connect</title>
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="manifest.webmanifest">
+
+    <!-- iOS PWA support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="WiFi Connect">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- QR generation library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            padding: 30px;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        #qr-container {
+            margin-top: 30px;
+        }
+    </style>
 </head>
-<body style="font-family: Arial; text-align:center; margin-top:40px;">
+
+<body>
 
     <h2>Connect to WiFi</h2>
-    <button onclick="showWifiQR()" 
-            style="padding: 12px 25px; font-size:18px;">
-        Connect to WiFi
-    </button>
+    <p>Your QR code is ready.</p>
 
-    <div id="qr-container" style="margin-top:30px; display:none;">
+    <div id="qr-container">
         <canvas id="qr"></canvas>
         <p>Scan this QR code to connect.</p>
+
+        <button onclick="openScanner()">Open Scanner App</button>
     </div>
 
     <script>
-        function showWifiQR() {
-            const ssid = "MyNetwork";      // <-- your wifi name
-            const password = "mypassword"; // <-- your wifi password
-            const encryption = "WPA";      // WEP / WPA / nopass
+        // Automatically generate WiFi QR code on load
+        function generateQR() {
+            const ssid = "esp";      // <-- your WiFi SSID
+            const password = "espesp"; // <-- your WiFi password
+            const encryption = "WPA";      // WPA, WEP, or nopass
 
-            let qrText = `WIFI:T:${encryption};S:${ssid};P:${password};;`;
+            const wifiQR = `WIFI:T:${encryption};S:${ssid};P:${password};;`;
 
-            let qr = new QRious({
+            new QRious({
                 element: document.getElementById("qr"),
                 size: 300,
-                value: qrText
+                value: wifiQR
             });
+        }
 
-            document.getElementById("qr-container").style.display = "block";
+        // Open QR scanner via Android Intent
+        function openScanner() {
+            // Try Google Lens
+            window.location.href =
+                "intent:#Intent;scheme=googlelens;package=com.google.ar.lens;end;";
+
+            // Fallback to ZXing
+            setTimeout(() => {
+                window.location.href =
+                    "intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;end;";
+            }, 600);
+        }
+
+        // Run QR generator automatically
+        window.onload = generateQR;
+
+        // Register service worker for PWA offline support
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("service-worker.js");
         }
     </script>
 
