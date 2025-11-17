@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>AlignItCam WebApp to control esp camera</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<!--page definition --> 
+<body>
+  <h1>ESP32 Web BLE Application</h1>
+  <label for="name">Camera Name:</label>
+  <input type="text" id="cameraNameID" name="name" />
+  <button id="connectBleButton">Connect to BLE Device</button>
+  <button id="disconnectBleButton">Disconnect BLE Device</button>
+  <p>BLE state: <strong><span id="bleState" style="color:#d13a30;">Disconnected</span></strong></p>
+  <h2>Wi-fi connection</h2>
+  <label for="name">Wi-fi Name:</label>
+  <input type="text" id="wifiNameID" name="name" />
+  <label for="name">Wi-fi password:</label>
+  <input type="password" id="wifiPwdID" name="name" />
+  <button id="wifiConnectID">Connect wifi</button>
+  <p><span id="valueContainer">ip: none</span></p>
+  <p><span id="timestamp">Last reading: </span></p>
+  <p> link to <a id="cameraID" href="stream.html" target="_blank" rel="noopener noreferrer">camera</a>.</p>
+  <h2>Camera Control</h2>
+  <button id="onButton">ON</button>
+  <button id="offButton">OFF</button>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
