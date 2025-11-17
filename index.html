@@ -1,353 +1,88 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WiFi Connect (PWA)</title>
+    <meta charset="UTF-8">
+    <title>WiFi Check</title>
+    <style>
+        body { font-family: Arial; padding: 20px; text-align: center; }
+        #wifi-info { display: none; margin-top: 30px; }
+        button { padding: 12px 20px; font-size: 18px; cursor: pointer; }
+        canvas { margin-top: 20px; }
+    </style>
 
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#317EFB" />
-
-  <!-- iOS PWA support -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="WiFi Connect">
-  <link rel="apple-touch-icon" href="icon-192.png">
-
-  <!-- QRious CDN (cached by service worker) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-
-  <style>
-    :root { --accent:#317EFB; --bg:#fff; --muted:#666; }
-    body { font-family: system-ui, -apple-system, Arial, sans-serif; margin:0; padding:24px; background:var(--bg); color:#111; display:flex; flex-direction:column; align-items:center; min-height:100vh; box-sizing:border-box; }
-    header { text-align:center; margin-bottom:18px; }
-    h1 { margin:0; font-size:20px; }
-    p { margin:8px 0 18px 0; color:var(--muted); }
-    #app { width:100%; max-width:420px; }
-    .card { background:#f8f9fb; padding:16px; border-radius:12px; box-shadow:0 6px 18px rgba(15,23,42,0.06); text-align:center; }
-    canvas { display:block; margin:0 auto; border-radius:6px; }
-    button { margin-top:12px; padding:10px 16px; font-size:16px; border-radius:10px; border:0; background:var(--accent); color:white; cursor:pointer; }
-    .secondary { background:transparent; color:var(--accent); border:1px solid var(--accent); margin-left:8px; }
-    #status { margin-top:12px; font-size:14px; color:var(--muted); text-align:left; }
-    .row { display:flex; gap:8px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
-    a.small { font-size:13px; color:var(--muted); text-decoration:none; display:block; margin-top:8px; }
-    footer { margin-top:22px; color:var(--muted); font-size:13px; text-align:center; }
-  </style>
+    <!-- Self-hosted QRious -->
+    <script src="js/qrious.min.js"></script>
 </head>
 <body>
-  <header>
-    <h1>WiFi Connect</h1>
-    <p>QR is generated automatically. Install as PWA for offline use.</p>
-  </header>
 
-  <main id="app">
-    <div class="card">
-      <div id="qr-container">
-        <canvas id="qr" width="300" height="300" aria-label="WiFi QR code"></canvas>
-        <p id="qr-caption" style="margin-top:10px; color:var(--muted)">Scan to connect to Wi-Fi.</p>
-      </div>
+<h2>Connection Check</h2>
+<p id="status">Checking connection...</p>
 
-      <div id="status" aria-live="polite">
-        Detecting scanner apps... (will try a hybrid probe; detection is best-effort)
-      </div>
+<div id="wifi-info">
+    <h3>Not connected to the correct network</h3>
+    <p>Please connect to the Wi‑Fi below:</p>
 
-      <div class="row">
-        <button id="open-best">Open Best Scanner</button>
-        <button id="open-menu" class="secondary">Open Any Scanner</button>
-      </div>
+    <p><strong>SSID:</strong> MyNetwork</p>
+    <p><strong>Password:</strong> mypassword</p>
 
-      <a id="install-hint" class="small" href="#" style="display:none;">Tap to install this app</a>
-    </div>
+    <canvas id="qr"></canvas>
 
-    <div style="height:18px;"></div>
-
-    <div style="text-align:center">
-      <small style="color:var(--muted)">Icons required: icon-192.png and icon-512.png in same folder.</small>
-    </div>
-  </main>
-
-  <footer>
-    <small>Note: Browsers limit detecting installed apps. This page uses a hybrid probe + fallbacks.</small>
-  </footer>
+    <button onclick="openWifiSettings()">Open Wi‑Fi Settings</button>
+</div>
 
 <script>
-/* ------------- CONFIG: Set your WiFi credentials here ------------- */
-const CONFIG = {
-  ssid: "esp",
-  password: "espesp",
-  encryption: "WPA" // "WPA", "WEP", or "nopass"
-};
-/* ----------------------------------------------------------------- */
+const CHECK_URL = "http://192.168.1.10/ping";  // <-- change this to your server
+const WIFI_SSID = "MyNetwork";                 // <-- your Wi‑Fi name
+const WIFI_PASS = "mypassword";                // <-- your Wi‑Fi password
+const WIFI_ENCRYPTION = "WPA";                 // WPA, WEP, or nopass
 
-/* small helper: create WIFI: QR string according to spec */
-function buildWifiQR(ssid, password, encryption) {
-  // escape ; , : and \ by backslash per common QR wifi format recommendations
-  const esc = str => String(str).replace(/([\\;,":])/g, "\\$1");
-  if (encryption === "nopass") {
-    return `WIFI:T:nopass;S:${esc(ssid)};;`;
-  }
-  return `WIFI:T:${encryption};S:${esc(ssid)};P:${esc(password)};;`;
-}
-
-/* Generate QR on load */
-function generateQR() {
-  const qrText = buildWifiQR(CONFIG.ssid, CONFIG.password, CONFIG.encryption);
-  // QRious usage
-  const canvas = document.getElementById("qr");
-  try {
-    new QRious({ element: canvas, size: 300, value: qrText });
-    document.getElementById("qr-caption").textContent = `SSID: ${CONFIG.ssid}`;
-  } catch (e) {
-    // If QRious missing (rare) show fallback text
-    canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
-    document.getElementById("qr-caption").textContent = "QR generation failed.";
-    console.error(e);
-  }
-}
-
-/* ---------------- Hybrid app detection & open logic ----------------
-   Strategy:
-   - We try "probing" each intent by navigating to intent:// or using a hidden iframe.
-   - Modern browsers often block probing or make it unreliable. So:
-       1) We attempt a probe (best-effort).
-       2) If probe is inconclusive, we fallback at user tap to opening intents directly.
-   - IMPORTANT: Opening an app must be triggered by a user gesture to be reliable.
-------------------------------------------------------------------*/
-
-/* Attempt to probe an app's presence using a timed visibility/navigation trick.
-   Returns Promise<boolean>. Note: can give false-negatives on modern browsers.
-*/
-function probeIntent(intentUrl, timeout = 1000) {
-  return new Promise((resolve) => {
-    let resolved = false;
-    const start = Date.now();
-
-    const onHidden = () => {
-      if (!resolved) {
-        resolved = true;
-        cleanup();
-        resolve(true); // page got hidden => likely the app handled the intent
-      }
-    };
-
-    const timer = setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        cleanup();
-        // If page is still visible, assume probe failed (app likely not installed OR browser blocked probe)
-        resolve(false);
-      }
-    }, timeout);
-
-    function cleanup() {
-      clearTimeout(timer);
-      document.removeEventListener('visibilitychange', onHidden);
-      // restore location if we changed it (we won't change here)
-    }
-
-    // Listen for page visibility change: if app opened, page may become hidden
-    document.addEventListener('visibilitychange', onHidden);
-
-    // Try two methods:
-    // 1) hidden iframe navigation (older approach)
+// Try pinging your server
+async function checkConnection() {
     try {
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
+        const response = await fetch(CHECK_URL, {
+            method: "GET",
+            cache: "no-cache",
+        });
 
-      // set src to intent. Some browsers throw when writing to iframe; wrap in try/catch
-      try {
-        iframe.contentWindow.location.href = intentUrl;
-      } catch (e) {
-        // setting contentWindow.location may throw in some browsers; fallback to src
-        iframe.src = intentUrl;
-      }
-
-      // remove iframe after timeout slightly longer
-      setTimeout(() => {
-        try { document.body.removeChild(iframe); } catch(e) {}
-      }, timeout + 400);
-    } catch (err) {
-      // If iframe approach fails, attempt top-level navigation fallback (rare)
-      try {
-        window.location.href = intentUrl;
-        // Note: this WILL navigate away if app handles intent;
-        // our visibilitychange listener will detect it.
-      } catch(e) {}
+        if (response.ok) {
+            document.getElementById("status").innerText =
+                "Connected to the correct network ✔";
+            return;
+        }
+    } catch (e) {
+        // Server unreachable → show Wi-Fi credentials
+        showWifiInfo();
     }
-
-    // Safety: if visibilitychange doesn't happen, timeout will resolve false.
-  });
 }
 
-/* Intent strings for popular scanners */
-const INTENTS = {
-  googleLensProbe: "intent:#Intent;scheme=googlelens;package=com.google.ar.lens;end;",
-  googleLensOpen:  "intent:#Intent;scheme=googlelens;package=com.google.ar.lens;end;",
-  zxingProbe:      "intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;end;",
-  zxingOpen:       "intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;end;"
-};
+// Show Wi-Fi QR code + credentials
+function showWifiInfo() {
+    document.getElementById("status").innerText =
+        "Not connected to the required network ✖";
+        
+    document.getElementById("wifi-info").style.display = "block";
 
-/* High-level detect function: attempts probe for multiple apps (best-effort).
-   We run it automatically (may give inconclusive results) and also re-run when user taps "Open Best Scanner".
-*/
-async function detectScannerApps() {
-  const statusEl = document.getElementById('status');
-  statusEl.textContent = "Checking for scanner apps (best-effort)...";
+    const wifiQR = `WIFI:T:${WIFI_ENCRYPTION};S:${WIFI_SSID};P:${WIFI_PASS};;`;
 
-  // We do probes in parallel and wait for results
-  const probes = [
-    probeIntent(INTENTS.googleLensProbe, 900).then(r => ({name:'googleLens', ok:r})),
-    probeIntent(INTENTS.zxingProbe, 900).then(r => ({name:'zxing', ok:r}))
-  ];
-
-  // Allow probes to run concurrently and collect
-  let results;
-  try {
-    results = await Promise.all(probes);
-  } catch(e) {
-    results = [];
-  }
-
-  const found = {};
-  results.forEach(r => { found[r.name] = !!r.ok; });
-
-  // Conservative default: false if undefined
-  const googleLens = !!found.googleLens;
-  const zxing = !!found.zxing;
-
-  // Update UI
-  let html = "";
-  if (googleLens) html += "✔ Google Lens detected.<br>";
-  if (zxing) html += "✔ ZXing Barcode Scanner detected.<br>";
-  if (!googleLens && !zxing) {
-    html += "No scanner apps detected (or browser blocked probing).<br>";
-    html += "You can still open a scanner — detection is best-effort. ";
-    html += "If nothing opens, use the Play Store links below.";
-  }
-  statusEl.innerHTML = html;
-
-  // return object for caller
-  return { googleLens, zxing };
+    new QRious({
+        element: document.getElementById("qr"),
+        value: wifiQR,
+        size: 250
+    });
 }
 
-/* Called when user taps "Open Best Scanner". We'll:
-   - attempt detection again (since the user gesture allows more reliable probing in some browsers)
-   - open the best available scanner (Google Lens preferred, then ZXing)
-   - if none, open Play Store link for ZXing or show instruction
-*/
-async function openBestScanner() {
-  // Re-run detection under user gesture (probes called as part of a user interaction are more likely to succeed)
-  const detection = await detectScannerApps();
-
-  // Choose winner
-  if (detection.googleLens) {
-    openIntent(INTENTS.googleLensOpen);
-    return;
-  }
-  if (detection.zxing) {
-    openIntent(INTENTS.zxingOpen);
-    return;
-  }
-
-  // No detected app: present options / fallback
-  const statusEl = document.getElementById('status');
-  statusEl.innerHTML = "No scanner detected. Opening Play Store for ZXing (or install a scanner app).";
-
-  // Try to open Play Store entry for ZXing (market intent)
-  // This will either open Play Store app or Play Store webpage
-  const market = "market://details?id=com.google.zxing.client.android";
-  const webPlay = "https://play.google.com/store/apps/details?id=com.google.zxing.client.android";
-
-  // Try market intent first; if it doesn't work, open web link
-  try {
-    openIntent(market);
-    // Also set fallback to open web after short delay
-    setTimeout(() => { window.location.href = webPlay; }, 1200);
-  } catch (e) {
-    window.location.href = webPlay;
-  }
-}
-
-/* Open a given intent/href. Must be called by a user gesture for best success.
-   We use a robust approach: top-level navigation via window.location (common) and a
-   fallback iframe approach for some browsers.
-*/
-function openIntent(href) {
-  // If href starts with "intent:" or "market:" we do top-level navigation
-  // We wrap in try/catch to avoid uncaught errors
-  try {
-    window.location.href = href;
-  } catch (e) {
-    // fallback: iframe
+// Opens Android Wi-Fi settings
+function openWifiSettings() {
     try {
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = href;
-      document.body.appendChild(iframe);
-      setTimeout(() => {
-        try { document.body.removeChild(iframe); } catch (e) {}
-      }, 1500);
-    } catch (err) {
-      console.warn('Could not open intent:', err);
+        window.location.href =
+            "intent:#Intent;action=android.settings.WIFI_SETTINGS;end;";
+    } catch (e) {
+        alert("Cannot open Wi‑Fi settings on this device.");
     }
-  }
 }
 
-/* "Open Any Scanner" shows a small menu of explicit choices for the user to tap */
-function initializeMenuButtons() {
-  document.getElementById('open-best').addEventListener('click', (ev) => {
-    ev.preventDefault();
-    openBestScanner();
-  });
-
-  document.getElementById('open-menu').addEventListener('click', (ev) => {
-    ev.preventDefault();
-    // show native prompt: choose which to open
-    const choice = confirm("Open Google Lens? (Cancel to try ZXing)\n\nOK = Google Lens, Cancel = ZXing");
-    if (choice) {
-      openIntent(INTENTS.googleLensOpen);
-    } else {
-      openIntent(INTENTS.zxingOpen);
-    }
-  });
-}
-
-/* PWA: beforeinstallprompt UX */
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  const installHint = document.getElementById('install-hint');
-  installHint.style.display = 'block';
-  installHint.textContent = "Tap here to install this app";
-  installHint.addEventListener('click', async (ev) => {
-    ev.preventDefault();
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    installHint.style.display = 'none';
-  }, { once: true });
-});
-
-/* Register service worker */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js').catch(err => {
-    console.warn('Service Worker registration failed:', err);
-  });
-}
-
-/* Initialize page on load */
-window.addEventListener('load', async () => {
-  generateQR();
-  initializeMenuButtons();
-
-  // Try a non-user-gesture detection (best-effort). It may be blocked.
-  // We'll also re-run detection when user taps "Open Best Scanner".
-  detectScannerApps().catch(() => {
-    document.getElementById('status').textContent = "Scanner detection unavailable in this browser.";
-  });
-});
+checkConnection();
 </script>
+
 </body>
 </html>
